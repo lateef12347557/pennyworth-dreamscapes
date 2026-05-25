@@ -1,16 +1,20 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Bath, BedDouble, Maximize, MapPin, ArrowUpRight } from "lucide-react";
 import p1 from "@/assets/property-1.jpg";
 import p2 from "@/assets/property-2.jpg";
 import p3 from "@/assets/property-3.jpg";
+import { PropertyDialog, type Property } from "./PropertyDialog";
 
-const properties = [
+const properties: Property[] = [
   { img: p1, price: "$2.45M", title: "Casa de Olivo", addr: "Montecito, California", bed: 5, bath: 4, sqft: "4,200" },
   { img: p2, price: "$1.18M", title: "The Willowbrook", addr: "Hudson Valley, New York", bed: 4, bath: 3, sqft: "3,150" },
   { img: p3, price: "$3.92M", title: "Cedar & Glass", addr: "Sausalito, California", bed: 6, bath: 5, sqft: "5,400" },
 ];
 
 export function FeaturedProperties() {
+  const [selected, setSelected] = useState<Property | null>(null);
+
   return (
     <section id="properties" className="relative px-6 py-28 lg:px-10 lg:py-36">
       <div className="mx-auto max-w-7xl">
@@ -43,7 +47,8 @@ export function FeaturedProperties() {
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.7, delay: i * 0.12 }}
               whileHover={{ y: -10 }}
-              className="group relative overflow-hidden rounded-3xl bg-card shadow-card transition-shadow hover:shadow-bloom"
+              onClick={() => setSelected(p)}
+              className="group relative cursor-pointer overflow-hidden rounded-3xl bg-card text-left shadow-card transition-shadow hover:shadow-bloom"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <img
@@ -66,14 +71,20 @@ export function FeaturedProperties() {
                   <span className="inline-flex items-center gap-1.5"><Bath size={16} className="text-terracotta" />{p.bath}</span>
                   <span className="inline-flex items-center gap-1.5"><Maximize size={16} className="text-terracotta" />{p.sqft} sqft</span>
                 </div>
-                <a href="#contact" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-charcoal transition-colors hover:text-terracotta">
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-charcoal transition-colors group-hover:text-terracotta">
                   View Property <ArrowUpRight size={14} />
-                </a>
+                </span>
               </div>
             </motion.article>
           ))}
         </div>
       </div>
+
+      <PropertyDialog
+        property={selected}
+        open={!!selected}
+        onOpenChange={(v) => !v && setSelected(null)}
+      />
     </section>
   );
 }
