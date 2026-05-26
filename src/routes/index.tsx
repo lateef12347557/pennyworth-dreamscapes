@@ -9,6 +9,7 @@ import { LatestListings } from "@/components/site/LatestListings";
 import { CTABanner } from "@/components/site/CTABanner";
 import { Footer } from "@/components/site/Footer";
 import { CursorDot } from "@/components/site/CursorDot";
+import { WhatsAppButton } from "@/components/site/WhatsAppButton";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -35,6 +36,8 @@ function Index() {
       <LatestListings />
       <CTABanner />
       <Footer />
+      <WhatsAppButton />
     </main>
+
   );
 }

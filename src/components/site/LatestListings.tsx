@@ -1,22 +1,28 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { MapPin } from "lucide-react";
-import p1 from "@/assets/property-1.jpg";
-import p2 from "@/assets/property-2.jpg";
-import p3 from "@/assets/property-3.jpg";
-import { PropertyDialog, type Property } from "./PropertyDialog";
-
-type Listing = Property & { badge: string; tone: "terracotta" | "sage" };
-
-const listings: Listing[] = [
-  { img: p2, badge: "New", tone: "terracotta", title: "Magnolia Cottage", price: "$845K", addr: "Asheville, NC", bed: 3, bath: 2, sqft: "1,800" },
-  { img: p3, badge: "Hot", tone: "sage", title: "The Ridgeway", price: "$2.1M", addr: "Sausalito, CA", bed: 4, bath: 3, sqft: "3,400" },
-  { img: p1, badge: "New", tone: "terracotta", title: "Villa Sereno", price: "$3.4M", addr: "Ojai, CA", bed: 5, bath: 4, sqft: "4,600" },
-  { img: p2, badge: "Open", tone: "sage", title: "Birchwood Lane", price: "$1.05M", addr: "Hudson, NY", bed: 3, bath: 2, sqft: "2,100" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { PropertyDialog } from "./PropertyDialog";
+import { resolveImg, type Property } from "@/lib/properties";
+import { LikeButton } from "./LikeButton";
 
 export function LatestListings() {
   const [selected, setSelected] = useState<Property | null>(null);
+  const { data: listings = [] } = useQuery({
+    queryKey: ["properties", "latest"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (error) throw error;
+      return data as Property[];
+    },
+  });
+
+  if (listings.length === 0) return null;
 
   return (
     <section className="px-6 py-28 lg:px-10 lg:py-36">
@@ -35,18 +41,23 @@ export function LatestListings() {
             <motion.button
               type="button"
               onClick={() => setSelected(l)}
-              key={i}
+              key={l.id}
               initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.08 }}
               whileHover={{ y: -6 }}
               className="group relative w-[280px] shrink-0 cursor-pointer overflow-hidden rounded-2xl bg-card text-left shadow-card transition-shadow hover:shadow-bloom md:w-auto"
             >
               <div className="relative aspect-[4/5] overflow-hidden">
-                <img src={l.img} alt={l.title} loading="lazy" width={600} height={750}
+                <img src={resolveImg(l.image_url)} alt={l.title} loading="lazy" width={600} height={750}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <span className={`absolute left-4 top-4 small-caps text-[10px] rounded-full px-3 py-1 text-ivory ${l.tone === "terracotta" ? "bg-terracotta" : "bg-sage"}`}>
-                  {l.badge}
-                </span>
+                {l.featured && (
+                  <span className="absolute left-4 top-4 small-caps text-[10px] rounded-full px-3 py-1 text-ivory bg-terracotta">
+                    Featured
+                  </span>
+                )}
+                <div className="absolute right-3 top-3">
+                  <LikeButton propertyId={l.id} />
+                </div>
               </div>
               <div className="p-5">
                 <div className="flex items-baseline justify-between">
@@ -54,7 +65,7 @@ export function LatestListings() {
                   <span className="font-display text-lg text-terracotta">{l.price}</span>
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-xs text-charcoal/60">
-                  <MapPin size={12} /> {l.addr}
+                  <MapPin size={12} /> {l.address}
                 </div>
               </div>
             </motion.button>

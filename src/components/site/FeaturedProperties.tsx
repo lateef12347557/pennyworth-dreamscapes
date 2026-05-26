@@ -1,19 +1,26 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Bath, BedDouble, Maximize, MapPin, ArrowUpRight } from "lucide-react";
-import p1 from "@/assets/property-1.jpg";
-import p2 from "@/assets/property-2.jpg";
-import p3 from "@/assets/property-3.jpg";
-import { PropertyDialog, type Property } from "./PropertyDialog";
-
-const properties: Property[] = [
-  { img: p1, price: "$2.45M", title: "Casa de Olivo", addr: "Montecito, California", bed: 5, bath: 4, sqft: "4,200" },
-  { img: p2, price: "$1.18M", title: "The Willowbrook", addr: "Hudson Valley, New York", bed: 4, bath: 3, sqft: "3,150" },
-  { img: p3, price: "$3.92M", title: "Cedar & Glass", addr: "Sausalito, California", bed: 6, bath: 5, sqft: "5,400" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { PropertyDialog } from "./PropertyDialog";
+import { resolveImg, type Property } from "@/lib/properties";
+import { LikeButton } from "./LikeButton";
 
 export function FeaturedProperties() {
   const [selected, setSelected] = useState<Property | null>(null);
+  const { data: properties = [] } = useQuery({
+    queryKey: ["properties", "featured"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("featured", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Property[];
+    },
+  });
 
   return (
     <section id="properties" className="relative px-6 py-28 lg:px-10 lg:py-36">
@@ -41,7 +48,7 @@ export function FeaturedProperties() {
         <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {properties.map((p, i) => (
             <motion.article
-              key={p.title}
+              key={p.id}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
@@ -52,24 +59,26 @@ export function FeaturedProperties() {
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <img
-                  src={p.img} alt={p.title} loading="lazy" width={1200} height={900}
+                  src={resolveImg(p.image_url)} alt={p.title} loading="lazy" width={1200} height={900}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal/40 via-transparent to-transparent" />
-                <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-terracotta/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
                 <div className="absolute left-5 top-5 rounded-full bg-ivory/95 px-4 py-2 font-display text-lg text-terracotta shadow-soft">
                   {p.price}
+                </div>
+                <div className="absolute right-4 top-4">
+                  <LikeButton propertyId={p.id} />
                 </div>
               </div>
               <div className="p-6">
                 <h3 className="font-display text-2xl text-charcoal">{p.title}</h3>
                 <div className="mt-1 flex items-center gap-1.5 text-sm text-charcoal/60">
-                  <MapPin size={14} /> {p.addr}
+                  <MapPin size={14} /> {p.address}
                 </div>
                 <div className="mt-5 flex items-center gap-5 text-sm text-charcoal/75">
-                  <span className="inline-flex items-center gap-1.5"><BedDouble size={16} className="text-terracotta" />{p.bed}</span>
-                  <span className="inline-flex items-center gap-1.5"><Bath size={16} className="text-terracotta" />{p.bath}</span>
-                  <span className="inline-flex items-center gap-1.5"><Maximize size={16} className="text-terracotta" />{p.sqft} sqft</span>
+                  {p.bed != null && <span className="inline-flex items-center gap-1.5"><BedDouble size={16} className="text-terracotta" />{p.bed}</span>}
+                  {p.bath != null && <span className="inline-flex items-center gap-1.5"><Bath size={16} className="text-terracotta" />{p.bath}</span>}
+                  {p.sqft && <span className="inline-flex items-center gap-1.5"><Maximize size={16} className="text-terracotta" />{p.sqft} sqft</span>}
                 </div>
                 <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-charcoal transition-colors group-hover:text-terracotta">
                   View Property <ArrowUpRight size={14} />
