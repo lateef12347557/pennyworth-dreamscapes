@@ -36,6 +36,8 @@ function Index() {
       <LatestListings />
       <CTABanner />
       <Footer />
+      <WhatsAppButton />
     </main>
+
   );
 }
